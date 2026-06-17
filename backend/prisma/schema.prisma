@@ -1,0 +1,85 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             Int             @id @default(autoincrement())
+  email          String          @unique
+  password       String
+  role           String          
+  status         String          @default("ACTIVE") 
+  firstName      String
+  lastName       String
+  groupId        Int?
+  group          Group?          @relation(fields: [groupId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  grades         Grade[]
+  labSubmissions LabSubmission[]
+  schedule       Schedule[]      @relation("TeacherSchedule")
+}
+
+model Group {
+  id       Int        @id @default(autoincrement())
+  name     String     @unique
+  students User[]
+  schedule Schedule[]
+}
+
+model Subject {
+  id       Int        @id @default(autoincrement())
+  name     String
+  labs     LabWork[]
+  schedule Schedule[]
+}
+
+model Schedule {
+  id         Int      @id @default(autoincrement())
+  date       DateTime
+  startTime  DateTime
+  endTime    DateTime
+  subjectId  Int
+  subject    Subject  @relation(fields: [subjectId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  teacherId  Int
+  teacher    User     @relation("TeacherSchedule", fields: [teacherId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  groupId    Int
+  group      Group    @relation(fields: [groupId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  grades     Grade[]
+}
+
+model Grade {
+  id         Int      @id @default(autoincrement())
+  value      String?
+  isAbsent   Boolean  @default(false)
+  isLate     Boolean  @default(false)
+  studentId  Int
+  student    User     @relation(fields: [studentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  scheduleId Int
+  schedule   Schedule @relation(fields: [scheduleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model LabWork {
+  id          Int             @id @default(autoincrement())
+  title       String
+  description String
+  deadline    DateTime
+  isTeamWork  Boolean         @default(false)
+  subjectId   Int
+  subject     Subject         @relation(fields: [subjectId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  submissions LabSubmission[]
+}
+
+model LabSubmission {
+  id        Int      @id @default(autoincrement())
+  fileUrl   String
+  comment   String?
+  mark      Int?
+  studentId Int
+  student   User     @relation(fields: [studentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  labWorkId Int
+  labWork   LabWork  @relation(fields: [labWorkId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  submitted DateTime @default(now())
+}
